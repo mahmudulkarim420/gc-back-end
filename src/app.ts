@@ -27,6 +27,7 @@ connectDB();
 initSocket(httpServer);
 
 // Middleware
+// Middleware section-e Helmet change korun
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
   contentSecurityPolicy: {
@@ -35,7 +36,8 @@ app.use(helmet({
       scriptSrc: ["'self'", "'unsafe-inline'"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       imgSrc: ["'self'", "data:", "https://res.cloudinary.com"],
-      connectSrc: ["'self'", "https://gc-front-end-xrud.vercel.app", "wss://gc-back-end.vercel.app"],
+      // Eikhane Render-er URL thakte hobe
+      connectSrc: ["'self'", "https://gc-front-end-xrud.vercel.app", "https://gc-back-end.onrender.com", "wss://gc-back-end.onrender.com"],
     },
   },
 }));
