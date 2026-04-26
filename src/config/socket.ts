@@ -60,17 +60,21 @@ export const initSocket = (server: HttpServer) => {
   const onlineUsers = new Map<string, string>(); // socketId -> userId
 
   io.on('connection', (socket) => {
+    console.log(`[Socket] New connection: ${socket.id} | Origin: ${socket.handshake.headers.origin}`);
+
     socket.on('register_user', (userId) => {
       onlineUsers.set(socket.id, userId);
-      io.emit('online_users', Array.from(onlineUsers.values()));
-      console.log(`User registered: ${userId}. Total online: ${onlineUsers.size}`);
+      const onlineList = Array.from(onlineUsers.values()).filter(Boolean);
+      io.emit('online_users', onlineList);
+      console.log(`[Socket] User registered: ${userId} (socket: ${socket.id}). Online count: ${onlineUsers.size}`);
     });
 
-    socket.on('disconnect', () => {
+    socket.on('disconnect', (reason) => {
       const userId = onlineUsers.get(socket.id);
       onlineUsers.delete(socket.id);
-      io.emit('online_users', Array.from(onlineUsers.values()));
-      console.log(`User disconnected: ${userId}. Total online: ${onlineUsers.size}`);
+      const onlineList = Array.from(onlineUsers.values()).filter(Boolean);
+      io.emit('online_users', onlineList);
+      console.log(`[Socket] User disconnected: ${userId} (${socket.id}). Reason: ${reason}. Online count: ${onlineUsers.size}`);
     });
 
     // Group Switching
@@ -80,18 +84,24 @@ export const initSocket = (server: HttpServer) => {
         if (room !== socket.id) socket.leave(room);
       });
       socket.join(groupId);
-      console.log(`Socket ${socket.id} joined group: ${groupId}`);
+      console.log(`[Socket] Socket ${socket.id} joined group: ${groupId}`);
     });
 
     socket.on('send_message', async (data) => {
       try {
         const { senderId, groupId, content, type } = data;
+        console.log(`[Socket] send_message from ${senderId} to group ${groupId}: "${content.substring(0, 50)}"`);
+        if (!senderId || !groupId || !content) {
+          console.warn('[Socket] send_message missing required fields:', { senderId, groupId, content });
+          return;
+        }
         const newMessage = new Message({ sender: senderId, group: groupId, content, type, reactions: [] });
         await newMessage.save();
         const populatedMessage = await newMessage.populate('sender', 'username email avatarUrl');
+        console.log(`[Socket] Message saved & emitted. ID: ${newMessage._id}`);
         io.to(groupId).emit('receive_message', populatedMessage);
       } catch (error) {
-        console.error('Error handling send_message:', error);
+        console.error('[Socket] Error handling send_message:', error);
       }
     });
 
