@@ -44,8 +44,14 @@ export const initSocket = (server: HttpServer) => {
     SocketData
   >(server, {
     cors: {
-      origin: process.env.FRONTEND_URL || '*',
+      origin: [
+        'http://localhost:3000',
+        'http://127.0.0.1:3000',
+        'https://gc-front-end-xrud.vercel.app',
+        process.env.FRONTEND_URL?.replace(/\/$/, ''),
+      ].filter(Boolean) as string[],
       methods: ['GET', 'POST'],
+      credentials: true
     },
   });
 

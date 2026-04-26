@@ -10,6 +10,9 @@ import groupRoutes from './routes/groupRoutes';
 import userRoutes from './routes/userRoutes';
 import uploadRoutes from './routes/uploadRoutes';
 
+import helmet from 'helmet';
+import compression from 'compression';
+
 // Load environment variables
 dotenv.config();
 
@@ -24,9 +27,46 @@ connectDB();
 initSocket(httpServer);
 
 // Middleware
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      imgSrc: ["'self'", "data:", "https://res.cloudinary.com"],
+      connectSrc: ["'self'", "https://gc-front-end-xrud.vercel.app", "wss://gc-back-end.vercel.app"],
+    },
+  },
+}));
+app.use(compression());
 app.use(express.json());
+
+// CORS Configuration
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'https://gc-front-end-xrud.vercel.app',
+  process.env.FRONTEND_URL?.replace(/\/$/, ''), // Remove trailing slash if exists
+].filter(Boolean) as string[];
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    const isAllowed = allowedOrigins.some(allowedOrigin => {
+      // Check for exact match or match without trailing slash
+      return allowedOrigin === origin || allowedOrigin.replace(/\/$/, '') === origin;
+    });
+
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      console.warn(`CORS blocked for origin: ${origin}`);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
