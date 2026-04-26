@@ -37,7 +37,7 @@ app.use(helmet({
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       imgSrc: ["'self'", "data:", "https://res.cloudinary.com"],
       // Eikhane Render-er URL thakte hobe
-      connectSrc: ["'self'", "https://gc-front-end-xrud.vercel.app", "https://gc-back-end.onrender.com", "wss://gc-back-end.onrender.com"],
+      connectSrc: ["'self'", "https://gc-front-end.vercel.app", "https://gc-front-end-xrud.vercel.app", "https://gc-back-end.onrender.com", "wss://gc-back-end.onrender.com"],
     },
   },
 }));
@@ -47,6 +47,7 @@ app.use(express.json());
 // CORS Configuration
 const allowedOrigins = [
   'http://localhost:3000',
+  'https://gc-front-end.vercel.app',
   'https://gc-front-end-xrud.vercel.app',
   process.env.FRONTEND_URL?.replace(/\/$/, ''),
 ].filter(Boolean) as string[];
@@ -66,7 +67,7 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
-  optionsSuccessStatus: 200 // Some legacy browsers choke on 204
+  optionsSuccessStatus: 200
 }));
 app.use((req, res, next) => {
   if (process.env.NODE_ENV !== 'production') {
