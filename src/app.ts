@@ -24,17 +24,20 @@ connectDB();
 initSocket(httpServer);
 
 // Middleware
-app.use((req, res, next) => {
-  console.log(`${req.method} ${req.url} - Origin: ${req.headers.origin}`);
-  next();
-});
+app.use(express.json());
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
 }));
-app.use(express.json());
+
+app.use((req, res, next) => {
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(`${req.method} ${req.url} - Origin: ${req.headers.origin}`);
+  }
+  next();
+});
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -46,6 +49,15 @@ app.use('/api/upload', uploadRoutes);
 // Basic route for testing
 app.get('/', (req, res) => {
   res.send('API is running...');
+});
+
+// Production Error Handler
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
+  res.status(statusCode).json({
+    message: err.message,
+    stack: process.env.NODE_ENV === 'production' ? null : err.stack,
+  });
 });
 
 const PORT = process.env.PORT || 5000;

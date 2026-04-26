@@ -44,7 +44,7 @@ export const initSocket = (server: HttpServer) => {
     SocketData
   >(server, {
     cors: {
-      origin: '*', // In production, replace with your frontend URL
+      origin: process.env.FRONTEND_URL || '*',
       methods: ['GET', 'POST'],
     },
   });
