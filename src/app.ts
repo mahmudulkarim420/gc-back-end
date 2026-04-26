@@ -47,9 +47,8 @@ app.use(express.json());
 // CORS Configuration
 const allowedOrigins = [
   'http://localhost:3000',
-  'http://127.0.0.1:3000',
   'https://gc-front-end-xrud.vercel.app',
-  process.env.FRONTEND_URL?.replace(/\/$/, ''), // Remove trailing slash if exists
+  process.env.FRONTEND_URL?.replace(/\/$/, ''),
 ].filter(Boolean) as string[];
 
 app.use(cors({
