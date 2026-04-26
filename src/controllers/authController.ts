@@ -5,16 +5,34 @@ export const register = async (req: Request, res: Response) => {
   try {
     const { username, email, password } = req.body;
 
+    // --- Input Validation ---
+    if (!username || !email || !password) {
+      return res.status(400).json({ message: 'All fields (username, email, password) are required.' });
+    }
+    if (typeof password !== 'string' || password.length < 6) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters.' });
+    }
+
+    const trimmedUsername = username.trim();
+    const trimmedEmail = email.trim().toLowerCase();
+
+    if (!trimmedUsername || !trimmedEmail) {
+      return res.status(400).json({ message: 'Username and email cannot be blank.' });
+    }
+
     // Check if user already exists
-    const existingUser = await User.findOne({ $or: [{ email }, { username }] });
+    const existingUser = await User.findOne({ $or: [{ email: trimmedEmail }, { username: trimmedUsername }] });
     if (existingUser) {
-      return res.status(400).json({ message: 'User already exists' });
+      if (existingUser.email === trimmedEmail) {
+        return res.status(400).json({ message: 'An account with this email already exists.' });
+      }
+      return res.status(400).json({ message: 'This username is already taken.' });
     }
 
     // Create new user (password is hashed in pre-save hook)
     const newUser = new User({
-      username,
-      email,
+      username: trimmedUsername,
+      email: trimmedEmail,
       passwordHash: password, // The pre-save hook will hash this
     });
 
@@ -26,6 +44,7 @@ export const register = async (req: Request, res: Response) => {
         id: newUser._id,
         username: newUser.username,
         email: newUser.email,
+        avatarUrl: newUser.avatarUrl,
       },
     });
   } catch (error) {
@@ -38,8 +57,15 @@ export const login = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
 
+    // --- Input Validation ---
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email and password are required.' });
+    }
+
+    const trimmedEmail = email.trim().toLowerCase();
+
     // Find user by email
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: trimmedEmail });
     if (!user) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
@@ -56,6 +82,7 @@ export const login = async (req: Request, res: Response) => {
         id: user._id,
         username: user.username,
         email: user.email,
+        avatarUrl: user.avatarUrl,
       },
     });
   } catch (error) {
@@ -63,3 +90,4 @@ export const login = async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Server error during login' });
   }
 };
+
